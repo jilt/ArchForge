@@ -1,0 +1,4 @@
+torch
+torchvision
+opencv-python>=4.8.0
+numpy>=1.26.0

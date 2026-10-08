@@ -1,0 +1,18 @@
+[project]
+name = "ArchForge"
+version = "1.0.0"
+description = "Architectural visualization upscaler with collapsible UI, dual ControlNet, and perspective correction"
+license = { file = "LICENSE" }
+dependencies = []
+
+[project.urls]
+Repository = "https://github.com/jilt/ArchForge"
+
+[tool.comfy]
+PublisherId = "jilt"
+DisplayName = "Arch Forge"
+Icon = "https://www.jeeltcraft.com/favicon.svg"
+Categories = ["image", "controlnet", "upscale"]
+
+[project.scripts]
+# (leave empty - no CLI scripts)
