@@ -1,8 +1,8 @@
 # Arch Forge
 ![before](examples/HVQWq13X0AAAZaQ.jpg)
 ![after](examples/HVQWqUZXgAESXIm.jpg)
-**A one-node SDXL architectural environment enhancer for ComfyUI.** Arch Forge turns rough sketches, clay renders, base renders, and architectural concepts into detailed cyberpunk, sci-fi, and photoreal environment images while keeping the main controls in one compact node.
-It combines SDXL img2img, up to three LoRAs, Canny and Depth ControlNet guidance, optional manual perspective warping, ambient occlusion, model upscaling, Lucy-Richardson sharpening, final sharpening, and conservative vertical-perspective straightening.
+**An SDXL-based creative upscaler for architectural and sci-fi imagery in ComfyUI.** It combines structural guidance, configurable detail and texture LoRAs, perspective correction, and a final model-based upscale in a single node. It is designed to enrich materials and architectural detail, with settings that can allow creative reinterpretation rather than strict source reconstruction.
+A single compact node combines SDXL img2img, up to three LoRAs, Canny and Depth ControlNet guidance, optional manual perspective warping, ambient occlusion, model upscaling, Lucy-Richardson sharpening, final sharpening, and conservative vertical-perspective straightening.
 > **Positioning:** Arch Forge is for fast, local architectural-environment exploration—especially sci-fi, cyberpunk, game art, concept art, and realistic architecture—not a replacement for BIM, CAD, technical visualization, or image-to-video production pipelines.
 ## Why Arch Forge
 Architectural image workflows can sprawl across many node graphs and optional preprocessing packs. Arch Forge packages a practical SDXL-oriented enhancement chain into one ComfyUI node, with grouped controls for source preservation, depth, composition, post-processing, and output detail.
