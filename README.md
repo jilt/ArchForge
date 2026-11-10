@@ -1,4 +1,33 @@
 # Arch Forge
+
+## Version 1.0 — preliminary benchmark comparison
+
+Developer-run measurements collected on November 10, 2026, on an NVIDIA GeForce RTX 3060 with 12 GB VRAM, Windows, and PyTorch 2.11.0+cu130. These results describe the tested version 1.0 configurations, not every preset or later release.
+
+The comparison measures elapsed time from the start of the second SDXL sampling call to workflow termination. It excludes the initial 25-step image-generation sampler and includes downstream decoding, enlargement, finishing, and output saving where executed. Processing before that second sampling call is excluded. These are pipeline-interval measurements, not isolated upscale-node timings.
+
+| Configuration | Recorded sampling steps | Sampling call | Time after sampling until workflow ends | Combined elapsed time |
+|---|---:|---:|---:|---:|
+| Arch Forge 2× | 17 | 41.19 s | 11.79 s | 52.98 s |
+| Impact Pack 2× | 20 | 175.04 s | 22.37 s | 197.41 s |
+| Arch Forge 4× | 17 | 40.42 s | 33.92 s | 74.34 s |
+| Impact Pack 4× | 20 | 1,649.58 s | 891.22 s | 2,540.80 s (42 min 21 s) |
+
+Combined elapsed time = `workflow_end_time - sampling_data[1].sampler_sample_start_time`. The final column is calculated from unrounded timestamps, so displayed component sums can differ by 0.01 s.
+
+In these captures, the Impact Pack interval was 3.73 times as long at 2× and 34.18 times as long at 4×. These are observed interval ratios, not matched-settings speedups or image-quality comparisons. Arch Forge performs its final neural enlargement after diffusion sampling; the Impact provider performs enlargement before its upscale sampling pass. Because the interval starts at sampling, the Impact preprocessing is not included.
+
+### Measurement limits
+
+- One capture per configuration; no repeated-run medians or controlled cold/warm comparison.
+- Different recorded step counts (17 versus 20); matching sampling resolution, algorithm, conditioning, and denoise has not been established. Attribution of the Arch Forge second sampling calls should be verified against the executed workflows.
+- The post-sampling column is not pure neural-upscale inference time: it includes all remaining recorded workflow time.
+- The Impact Pack 4× final decode is flagged `valid_timing: false`. Its end-to-end interval includes that period; neither this interval nor the presence of a workflow end timestamp proves successful output saving. Treat that row as a diagnostic result, not a validated successful completion.
+- No isolated upscaler VRAM or RAM claim is made. These tests do not establish compatibility with 8 GB GPUs.
+- Benchmark files, executed workflows, and sample images will be linked separately.
+
+---
+
 ![before](examples/HVQWq13X0AAAZaQ.jpg)
 ![after](examples/HVQWqUZXgAESXIm.jpg)
 **An SDXL-based creative upscaler for architectural and sci-fi imagery in ComfyUI.** It combines structural guidance, configurable detail and texture LoRAs, perspective correction, and a final model-based upscale in a single node. It is designed to enrich materials and architectural detail, with settings that can allow creative reinterpretation rather than strict source reconstruction.
