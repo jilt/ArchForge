@@ -1,5 +1,30 @@
 # Arch Forge
 
+**An SDXL-based creative upscaler for architectural and sci-fi imagery in ComfyUI.** It combines structural guidance, configurable detail and texture LoRAs, perspective correction, and a final model-based upscale in a single node. It is designed to enrich materials and architectural detail, with settings that can allow creative reinterpretation rather than strict source reconstruction.
+A single compact node combines SDXL img2img, up to three LoRAs, Canny and Depth ControlNet guidance, optional manual perspective warping, ambient occlusion, model upscaling, Lucy-Richardson sharpening, final sharpening, and conservative vertical-perspective straightening.
+> **Positioning:** Arch Forge is for fast, local architectural-environment exploration—especially sci-fi, cyberpunk, game art, concept art, and realistic architecture—not a replacement for BIM, CAD, technical visualization, or image-to-video production pipelines.
+
+## Why Arch Forge
+Architectural image workflows can sprawl across many node graphs and optional preprocessing packs. Arch Forge packages a practical SDXL-oriented enhancement chain into one ComfyUI node, with grouped controls for source preservation, depth, composition, post-processing, and output detail.
+| | Arch Forge | Large multi-stage archviz workflows |
+|---|---|---|
+| Core use | Enhance and upscale an illustration, render, or concept into an architectural environment image | Full image, editing, camera-control, and often video pipeline |
+| Form factor | One ComfyUI custom node | Large workflows, subgraphs, or multiple JSON files |
+| Model focus | SDXL checkpoints, LoRAs, ControlNet | Often FLUX-class image models and video stacks |
+| Hardware target | Practical local SDXL systems; 8–12 GB VRAM is a useful starting point | Often larger GPUs, cloud runs, or staged execution |
+| Output | Realistic upscaled still image | Still images, editing passes, animation, and video |
+| Best for | Rapid local exploration and structured concept enhancement | Long-form technical archviz production |
+## Features
+- **One-node workflow** — wraps the enhancement chain in one Arch Forge node.
+- **SDXL-first design** — intended for local SDXL checkpoints, LoRAs, ControlNets, and upscalers.
+- **Three LoRA slots** — independent model and CLIP strength controls for each LoRA.
+- **Dual ControlNet guidance** — Canny preserves structural edges; MiDaS depth supports scene volume and depth-aware generation.
+- **Manual perspective warp** — optional NukeCornerPin stage for deliberate four-corner source mapping.
+- **Native perspective straighten** — conservative roll and vertical-keystone correction based on line detection, robust vanishing-point estimation, and a camera-rotation homography.
+- **Ambient occlusion pass** — optional MiDaS-driven SSAO compositing for restrained depth shading.
+- **Upscale and sharpening chain** — model upscale, optional Lucy-Richardson sharpening, then optional final sharpen.
+- **Compact grouped UI** — Models, Prompts, Canny, Depth, Perspective, Sampling, AO, Sharpen, Straighten, and Upscale controls are collapsed by default.
+
 ## Version 1.0 — preliminary benchmark comparison
 
 Developer-run measurements collected on November 10, 2026, on an NVIDIA GeForce RTX 3060 with 12 GB VRAM, Windows, and PyTorch 2.11.0+cu130. These results describe the tested version 1.0 configurations, not every preset or later release.
@@ -24,35 +49,14 @@ In these captures, the Impact Pack interval was 3.73 times as long at 2× and 34
 - The post-sampling column is not pure neural-upscale inference time: it includes all remaining recorded workflow time.
 - The Impact Pack 4× final decode is flagged `valid_timing: false`. Its end-to-end interval includes that period; neither this interval nor the presence of a workflow end timestamp proves successful output saving. Treat that row as a diagnostic result, not a validated successful completion.
 - No isolated upscaler VRAM or RAM claim is made. These tests do not establish compatibility with 8 GB GPUs.
-- Benchmark files, executed workflows, and sample images [1](
-https://raw.githubusercontent.com/jilt/ArchForge/refs/heads/main/examples/9d0c08a1-b22c-49e1-8e3d-6aafee4f549b.jpeg) [2](https://raw.githubusercontent.com/jilt/ArchForge/refs/heads/main/examples/bb895aa8-f579-4e1f-9810-a018cc76c278.jpeg)
+- [Benchmark files](https://drive.google.com/drive/folders/1XNS9gTpFzeOiOHFKHRbmMNiWj1JOyIaf)
+- Sample images
+![Perspective](https://raw.githubusercontent.com/jilt/ArchForge/refs/heads/main/examples/9d0c08a1-b22c-49e1-8e3d-6aafee4f549b.jpeg) ![scifi](https://raw.githubusercontent.com/jilt/ArchForge/refs/heads/main/examples/bb895aa8-f579-4e1f-9810-a018cc76c278.jpeg)
 ---
 
 ![before](examples/HVQWq13X0AAAZaQ.jpg)
 ![after](examples/HVQWqUZXgAESXIm.jpg)
-**An SDXL-based creative upscaler for architectural and sci-fi imagery in ComfyUI.** It combines structural guidance, configurable detail and texture LoRAs, perspective correction, and a final model-based upscale in a single node. It is designed to enrich materials and architectural detail, with settings that can allow creative reinterpretation rather than strict source reconstruction.
-A single compact node combines SDXL img2img, up to three LoRAs, Canny and Depth ControlNet guidance, optional manual perspective warping, ambient occlusion, model upscaling, Lucy-Richardson sharpening, final sharpening, and conservative vertical-perspective straightening.
-> **Positioning:** Arch Forge is for fast, local architectural-environment exploration—especially sci-fi, cyberpunk, game art, concept art, and realistic architecture—not a replacement for BIM, CAD, technical visualization, or image-to-video production pipelines.
-## Why Arch Forge
-Architectural image workflows can sprawl across many node graphs and optional preprocessing packs. Arch Forge packages a practical SDXL-oriented enhancement chain into one ComfyUI node, with grouped controls for source preservation, depth, composition, post-processing, and output detail.
-| | Arch Forge | Large multi-stage archviz workflows |
-|---|---|---|
-| Core use | Enhance a sketch, render, or concept into an architectural environment image | Full image, editing, camera-control, and often video pipeline |
-| Form factor | One ComfyUI custom node | Large workflows, subgraphs, or multiple JSON files |
-| Model focus | SDXL checkpoints, LoRAs, ControlNet | Often FLUX-class image models and video stacks |
-| Hardware target | Practical local SDXL systems; 8–12 GB VRAM is a useful starting point | Often larger GPUs, cloud runs, or staged execution |
-| Output | Architectural still image | Still images, editing passes, animation, and video |
-| Best for | Rapid local exploration and structured concept enhancement | Long-form technical archviz production |
-## Features
-- **One-node workflow** — wraps the enhancement chain in one Arch Forge node.
-- **SDXL-first design** — intended for local SDXL checkpoints, LoRAs, ControlNets, and upscalers.
-- **Three LoRA slots** — independent model and CLIP strength controls for each LoRA.
-- **Dual ControlNet guidance** — Canny preserves structural edges; MiDaS depth supports scene volume and depth-aware generation.
-- **Manual perspective warp** — optional NukeCornerPin stage for deliberate four-corner source mapping.
-- **Native perspective straighten** — conservative roll and vertical-keystone correction based on line detection, robust vanishing-point estimation, and a camera-rotation homography.
-- **Ambient occlusion pass** — optional MiDaS-driven SSAO compositing for restrained depth shading.
-- **Upscale and sharpening chain** — model upscale, optional Lucy-Richardson sharpening, then optional final sharpen.
-- **Compact grouped UI** — Models, Prompts, Canny, Depth, Perspective, Sampling, AO, Sharpen, Straighten, and Upscale controls are collapsed by default.
+
 ## Installation
 ### ComfyUI Manager
 Once published, search for **Arch Forge** in ComfyUI Manager and choose **Install**.
