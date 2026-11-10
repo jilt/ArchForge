@@ -24,8 +24,8 @@ In these captures, the Impact Pack interval was 3.73 times as long at 2× and 34
 - The post-sampling column is not pure neural-upscale inference time: it includes all remaining recorded workflow time.
 - The Impact Pack 4× final decode is flagged `valid_timing: false`. Its end-to-end interval includes that period; neither this interval nor the presence of a workflow end timestamp proves successful output saving. Treat that row as a diagnostic result, not a validated successful completion.
 - No isolated upscaler VRAM or RAM claim is made. These tests do not establish compatibility with 8 GB GPUs.
-- Benchmark files, executed workflows, and sample images will be linked separately.
-
+- Benchmark files, executed workflows, and sample images [1](
+https://raw.githubusercontent.com/jilt/ArchForge/refs/heads/main/examples/9d0c08a1-b22c-49e1-8e3d-6aafee4f549b.jpeg) [2](https://raw.githubusercontent.com/jilt/ArchForge/refs/heads/main/examples/bb895aa8-f579-4e1f-9810-a018cc76c278.jpeg)
 ---
 
 ![before](examples/HVQWq13X0AAAZaQ.jpg)
