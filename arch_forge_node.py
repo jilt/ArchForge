@@ -48,7 +48,17 @@ class ArchForgeNode:
             else:
                 if typ == 'STRING': opts['multiline'] = True
                 required[name] = (typ, opts) if opts else (typ,)
-        return {'required': required}
+        # Append the optional selector without shifting existing widget values.
+        vae_choices = ['Checkpoint VAE'] + folder_paths.get_filename_list('vae')
+        return {
+            'required': required,
+            'optional': {
+                'vae_name': (vae_choices, {
+                    'default': 'Checkpoint VAE',
+                    'tooltip': 'Override the checkpoint VAE for image encoding, decoding and ControlNet. Does not change model-family compatibility.',
+                }),
+            },
+        }
 
     def execute(self, **p):
         for name, typ, opts in SPECS:
@@ -73,6 +83,9 @@ class ArchForgeNode:
         depth = call_node('MiDaS-DepthMapPreprocessor', image=image,
             a=p['depth_midas_a'], bg_threshold=p['depth_midas_bg_threshold'], resolution=p['depth_resolution'])[0]
         model, clip, vae = call_node('CheckpointLoaderSimple', ckpt_name=p['checkpoint_name'])[:3]
+        vae_name = p.get('vae_name', 'Checkpoint VAE')
+        if vae_name != 'Checkpoint VAE':
+            vae = call_node('VAELoader', vae_name=vae_name)[0]
         for i in range(1,4):
             if p[f'lora_name_{i}'] != 'None':
                 model, clip = call_node('LoraLoader', model=model, clip=clip,

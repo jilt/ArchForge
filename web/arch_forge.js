@@ -3,7 +3,7 @@ import { app } from "../../scripts/app.js";
 const GROUPS = [
   ["Models", 
 	[
-	  "checkpoint_name",
+	  "checkpoint_name", "vae_name",
 	  "lora_name_1", "lora_strength_1_model", "lora_strength_1_clip",
       "lora_name_2", "lora_strength_2_model", "lora_strength_2_clip",
       "lora_name_3", "lora_strength_3_model", "lora_strength_3_clip"
