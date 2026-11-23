@@ -17,7 +17,7 @@ Arch Forge now has a second engine. The **workflow** switch at the top of the no
 
 | Input | MOSS output |
 |---|---|
-| ![MOSS input](examples/moss/urban-purple-jungle_00009.jpg) | ![MOSS output](examples/moss/stray-moss_00048.jpg) |
+| ![MOSS input](examples/urban-purple-jungle_00009.jpg) | ![MOSS output](examples/stray-moss_00048.jpg) |
 
 > **Release note:** these images and their example workflows are the MOSS reference set. A new version of the custom node, including the MOSS workflow, will be uploaded to the ComfyUI Registry once the new examples are up in this repository. Until then, install from GitHub.
 
@@ -58,7 +58,6 @@ Architectural image workflows can sprawl across many node graphs and optional pr
 - **SDXL-first design** — intended for local SDXL checkpoints, LoRAs, ControlNets, and upscalers.
 - **Four LoRA slots** — independent model and CLIP strength controls for each LoRA.
 - **Dual ControlNet guidance** — Canny preserves structural edges; MiDaS depth supports scene volume and depth-aware generation.
-- **Manual perspective warp** — optional NukeCornerPin stage for deliberate four-corner source mapping.
 - **Native perspective straighten** — conservative roll and vertical-keystone correction based on line detection, robust vanishing-point estimation, and a camera-rotation homography.
 - **Ambient occlusion pass** — optional MiDaS-driven SSAO compositing for restrained depth shading.
 - **Upscale and sharpening chain** — model upscale, optional Lucy-Richardson sharpening, then optional final sharpen.
@@ -115,13 +114,10 @@ Arch Forge calls several registered ComfyUI nodes. Install the corresponding pac
 |---|---|---|
 | [ComfyUI ControlNet Auxiliary Preprocessors](https://github.com/comfyorg/comfyui-controlnet-aux) | `MiDaS-DepthMapPreprocessor` for Depth ControlNet and SSAO depth maps; `CannyEdgePreprocessor` for MOSS | Required for depth pipeline / SSAO / MOSS canny |
 | [WAS Node Suite](https://github.com/WASasquatch/was-node-suite-comfyui) | `Image SSAO (Ambient Occlusion)` and `Image Lucy Sharpen` | Required only when SSAO or Lucy Sharpen is enabled |
-| [nuke-nodes-comfyui](https://github.com/sumitchatterjee13/nuke-nodes-comfyui) | `NukeCornerPin` manual perspective warp | Required only when Perspective warp is enabled |
 Core ComfyUI supplies the checkpoint, LoRA, ControlNet, sampler, VAE, ImageBlend, ImageSharpen, and model-upscale nodes used by the workflow.
 ### Important: two perspective tools
 Arch Forge has two intentionally separate tools:
 - **Perspective straighten** is the preferred architecture correction. It detects reliable vertical structure, estimates camera roll and pitch, and uses a rotation-only homography to reduce converging verticals. It is conservative: uncertain images remain unchanged rather than being aggressively warped.
-- **Perspective warp** is the optional NukeCornerPin stage. It is a manual four-point mapping tool for compositing or deliberate geometric changes. It does not infer which lines are architectural verticals.
-For normal architectural vertical correction, use **Persp Straighen**. The separate **Persp wrap** button has been removed from the node UI.
 ## Quick start
 1. Add **Arch Forge** from the `arch_forge` category.
 2. Connect a sketch, clay render, concept render, or base architectural image to `input_image`.
@@ -193,14 +189,6 @@ The label **Persp Straighen** keeps the spelling used by the shipped interface.
 | `depth_resolution` | MiDaS depth-preprocessor analysis resolution |
 | `depth_midas_a` | MiDaS depth preprocessor parameter |
 | `depth_midas_bg_threshold` | MiDaS background threshold |
-### Perspective warp
-| Parameter | Description |
-|---|---|
-| `enable_nuke` | Enables NukeCornerPin manual perspective warp |
-| `nuke_to1_*` through `nuke_to4_*` | Four destination-corner coordinates |
-| `nuke_filter` | Resampling filter passed to NukeCornerPin |
-| `corner_pin_scope` | `canny_only` matches the supplied tunnel workflow; `all_inputs` also warps VAE/depth inputs |
-With `canny_only`, the manual warp affects Canny structure guidance while the source image remains the input for VAE encoding and depth generation. Use `all_inputs` only when the whole img2img/depth path should follow the warped source.
 ### Sampling
 | Parameter | Description |
 |---|---|
@@ -282,7 +270,6 @@ For best results:
 The backend reports the exact registered node name it cannot find. Install or enable the relevant pack, then restart ComfyUI.
 - MiDaS depth preprocessing and MOSS canny: install ComfyUI ControlNet Auxiliary Preprocessors.
 - SSAO or Lucy Sharpen: install WAS Node Suite.
-- Manual corner pin: install nuke-nodes-comfyui.
 ### Perspective straighten changes little or nothing
 - Confirm **Persp Straighen** is enabled.
 - Use clear architectural images with visible, reliable vertical structure.
@@ -328,21 +315,19 @@ description = "One-node SDXL architectural environment enhancer for ComfyUI with
 ### Unreleased (next Registry version)
 - Added the **workflow** switch (SDXL / MOSS) at the top of the node panel; the panel shows only the fields of the selected workflow.
 - Added the two-pass MOSS flow with depth and canny control LoRAs, the `keep_artifacts` option, and the optional leftover-noise handoff.
-- Added a fourth LoRA slot (pass 2 only in MOSS).
-- Removed the **Persp wrap** button from the UI.
-- Added MOSS reference images under `examples/moss/`; example workflows will follow.
+- Added a fourth LoRA slot (pass 2 only in MOSS)
+- Added MOSS reference images under `examples/`; example workflows will follow.
 ### v1.2.0
-- Reworked the compact UI into Models, Prompts, Canny, Depth, Persp wrap, Sampling, Ambient Occlusion, Sharpen, Persp Straighen, and Upscale groups.
+- Reworked the compact UI into Models, Prompts, Canny, Depth, Sampling, Ambient Occlusion, Sharpen, Persp Straighen, and Upscale groups.
 - Added MiDaS-driven optional SSAO with compositing controls.
 - Added optional WAS Suite Lucy-Richardson sharpening before final sharpen.
-- Added `corner_pin_scope` for choosing whether manual NukeCornerPin affects Canny only or all source branches.
 - Replaced the earlier native perspective heuristic with conservative camera-rotation vertical correction.
 - Perspective correction now uses robust line evidence, a confidence gate, valid crop planning, and does not apply automatic yaw correction.
 - Added `scifi-tunnel-archforge.json` as the current sample workflow.
 - Outdoor-building example workflow is planned.
 ### v1.1.0
 - Added integrated auto-straighten perspective controls.
-- Added manual NukeCornerPin controls.
+- Removed the **Persp wrap** button from the UI.
 ### v1.0.0
 - Initial Arch Forge release.
 - SDXL architecture/environment enhancement workflow.
