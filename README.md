@@ -6,9 +6,9 @@ A single compact node combines SDXL img2img (or the new two-pass MOSS flow), up 
 
 ![Perspective](https://raw.githubusercontent.com/jilt/ArchForge/refs/heads/main/examples/9d0c08a1-b22c-49e1-8e3d-6aafee4f549b.jpeg) ![scifi](https://raw.githubusercontent.com/jilt/ArchForge/refs/heads/main/examples/bb895aa8-f579-4e1f-9810-a018cc76c278.jpeg)
 ---
-
-![before](examples/HVQWq13X0AAAZaQ.jpg)
-![after](examples/HVQWqUZXgAESXIm.jpg)
+| Input | SDXL output |
+|---|---|
+| ![before](examples/HVQWq13X0AAAZaQ.jpg) | ![after](examples/HVQWqUZXgAESXIm.jpg) |
 
 ## MOSS workflow (new)
 Arch Forge now has a second engine. The **workflow** switch at the top of the node panel selects **SDXL** (default, unchanged) or **MOSS**. MOSS replaces only the part of the node from the model/image loaders to the sampler with a two-pass MOSS-Image flow; ambient occlusion, upscale, sharpening and perspective straightening are shared and behave exactly as before.
