@@ -17,7 +17,7 @@ Arch Forge now has a second engine. The **workflow** switch at the top of the no
 
 | Input | MOSS output |
 |---|---|
-| ![MOSS input](examples/urban-purple-jungle_00009.jpg) | ![MOSS output](examples/stray-moss_00048.jpg) |
+| ![MOSS input](https://raw.githubusercontent.com/jilt/ArchForge/refs/heads/main/examples/urban-purple-jungle_00009_.png) | ![MOSS output](https://raw.githubusercontent.com/jilt/ArchForge/refs/heads/main/examples/stray-moss_00048.png) |
 
 > **Release note:** these images and their example workflows are the MOSS reference set. A new version of the custom node, including the MOSS workflow, will be uploaded to the ComfyUI Registry once the new examples are up in this repository. Until then, install from GitHub.
 
