@@ -1,7 +1,7 @@
 # Arch Forge
 
 **A creative upscaler for architectural and sci-fi imagery in ComfyUI.** It combines structural guidance, configurable detail and texture LoRAs, perspective correction, and a final model-based upscale in a single node. It is designed to enrich materials and architectural detail, with settings that can allow creative reinterpretation rather than strict source reconstruction.
-A single compact node combines SDXL img2img, up to three LoRAs, Canny and Depth ControlNet guidance, optional manual perspective warping, ambient occlusion, model upscaling, Lucy-Richardson sharpening, final sharpening, and conservative vertical-perspective straightening.
+A single compact node combines SDXL img2img (or the new two-pass MOSS flow), up to four LoRAs, Canny and Depth guidance, ambient occlusion, model upscaling, Lucy-Richardson sharpening, final sharpening, and conservative vertical-perspective straightening.
 > **Positioning:** Arch Forge is for fast, local architectural-environment exploration—especially sci-fi, cyberpunk, game art, concept art, and realistic architecture—not a replacement for BIM, CAD, technical visualization, or image-to-video production pipelines.
 
 ![Perspective](https://raw.githubusercontent.com/jilt/ArchForge/refs/heads/main/examples/9d0c08a1-b22c-49e1-8e3d-6aafee4f549b.jpeg) ![scifi](https://raw.githubusercontent.com/jilt/ArchForge/refs/heads/main/examples/bb895aa8-f579-4e1f-9810-a018cc76c278.jpeg)
@@ -10,26 +10,59 @@ A single compact node combines SDXL img2img, up to three LoRAs, Canny and Depth 
 ![before](examples/HVQWq13X0AAAZaQ.jpg)
 ![after](examples/HVQWqUZXgAESXIm.jpg)
 
+## MOSS workflow (new)
+Arch Forge now has a second engine. The **workflow** switch at the top of the node panel selects **SDXL** (default, unchanged) or **MOSS**. MOSS replaces only the part of the node from the model/image loaders to the sampler with a two-pass MOSS-Image flow; ambient occlusion, upscale, sharpening and perspective straightening are shared and behave exactly as before.
+
+**Reference images for MOSS** — the input image (left) and the result of the MOSS workflow (right):
+
+| Input | MOSS output |
+|---|---|
+| ![MOSS input](examples/moss/urban-purple-jungle_00009.jpg) | ![MOSS output](examples/moss/stray-moss_00048.jpg) |
+
+> **Release note:** these images and their example workflows are the MOSS reference set. A new version of the custom node, including the MOSS workflow, will be uploaded to the ComfyUI Registry once the new examples are up in this repository. Until then, install from GitHub.
+
+### How the MOSS flow works
+1. A depth map (MiDaS) is made from the input image and used by the depth control LoRA in pass 1.
+2. Pass 1 samples from `start_at_step` to `end_at_step` with the depth-guided model and depth-image text encoders.
+3. Pass 2 continues from `end_at_step` to `steps`. With **keep_artifacts** on, it uses the canny control LoRA, a Canny map and the VAE in the text encoders. With it off, it uses no canny LoRA, the original image and no VAE in the encoders.
+4. The result is decoded with the MOSS VAE and goes through the same post-production chain as SDXL.
+
+LoRAs 1–3 are applied to both passes. LoRA 4 is applied to pass 2 only, and its CLIP is used by every text encode.
+
+### MOSS inputs
+| UI group | MOSS controls |
+|---|---|
+| **Models** | `moss_unet_name`, `moss_clip_name` (type flux2), `moss_vae_name`, LoRA slots 1–4 |
+| **Canny** | `moss_canny_lora` (strength = `canny_strength`), `moss_canny_low`, `moss_canny_high`, `moss_canny_resolution`, `keep_artifacts` |
+| **Depth** | `moss_depth_lora` (strength = `depth_strength`), `depth_resolution`, `depth_midas_a`, `depth_midas_bg_threshold` |
+| **Sampling** | `seed`, `steps`, `cfg`, `sampler_name`, `scheduler`, `start_at_step`, `end_at_step`, `moss_leftover_noise_handoff` |
+The panel shows only the fields of the selected workflow. `depth_controlnet`, `depth_start` and `depth_end` apply to SDXL only.
+
+Settings used for the reference images: steps `25`, cfg `2.5`, sampler `er_sde`, scheduler `simple`, start `6`, end `14`, depth strength `1.0`, canny strength `0.6`, Canny `120` / `220` at resolution `1024`, MiDaS `bg_threshold` `0.5`.
+
+MOSS needs the MOSS-Image models from [Comfy-Org/MOSS-Image](https://huggingface.co/Comfy-Org/MOSS-Image) (diffusion model, text encoder and VAE), the depth and canny control LoRAs, a ComfyUI build that includes `TextEncodeMOSSImageEdit`, and ComfyUI ControlNet Auxiliary Preprocessors for `CannyEdgePreprocessor` and MiDaS.
+
 ## Why Arch Forge
 Architectural image workflows can sprawl across many node graphs and optional preprocessing packs. Arch Forge packages a practical SDXL-oriented enhancement chain into one ComfyUI node, with grouped controls for source preservation, depth, composition, post-processing, and output detail.
 | | Arch Forge | Large multi-stage archviz workflows |
 |---|---|---|
 | Core use | Enhance and upscale an illustration, render, or concept into an architectural environment image | Full image, editing, camera-control, and often video pipeline |
 | Form factor | One ComfyUI custom node | Large workflows, subgraphs, or multiple JSON files |
-| Model focus | SDXL checkpoints, LoRAs, ControlNet | Often FLUX-class image models and video stacks |
+| Model focus | SDXL checkpoints, LoRAs, ControlNet, plus a MOSS two-pass mode | Often FLUX-class image models and video stacks |
 | Hardware target | Practical local SDXL systems; 8–12 GB VRAM is a useful starting point | Often larger GPUs, cloud runs, or staged execution |
 | Output | Realistic upscaled still image | Still images, editing passes, animation, and video |
 | Best for | Rapid local exploration and structured concept enhancement | Long-form technical archviz production |
 ## Features
 - **One-node workflow** — wraps the enhancement chain in one Arch Forge node.
+- **Two engines** — SDXL (default) or MOSS two-pass, chosen with the workflow switch.
 - **SDXL-first design** — intended for local SDXL checkpoints, LoRAs, ControlNets, and upscalers.
-- **Three LoRA slots** — independent model and CLIP strength controls for each LoRA.
+- **Four LoRA slots** — independent model and CLIP strength controls for each LoRA.
 - **Dual ControlNet guidance** — Canny preserves structural edges; MiDaS depth supports scene volume and depth-aware generation.
 - **Manual perspective warp** — optional NukeCornerPin stage for deliberate four-corner source mapping.
 - **Native perspective straighten** — conservative roll and vertical-keystone correction based on line detection, robust vanishing-point estimation, and a camera-rotation homography.
 - **Ambient occlusion pass** — optional MiDaS-driven SSAO compositing for restrained depth shading.
 - **Upscale and sharpening chain** — model upscale, optional Lucy-Richardson sharpening, then optional final sharpen.
-- **Compact grouped UI** — Models, Prompts, Canny, Depth, Perspective, Sampling, AO, Sharpen, Straighten, and Upscale controls are collapsed by default.
+- **Compact grouped UI** — Models, Prompts, Canny, Depth, Sampling, AO, Sharpen, Straighen, and Upscale controls are collapsed by default.
 
 ## Version 1.0 — benchmark comparison with impact pack 
 
@@ -60,7 +93,7 @@ In these captures, the Impact Pack interval was 3.73 times as long at 2× and 34
 
 ## Installation
 ### ComfyUI Manager
-Once published, search for **Arch Forge** in ComfyUI Manager and choose **Install**.
+Once published, search for **Arch Forge** in ComfyUI Manager and choose **Install**. The MOSS workflow will reach the Registry version when the new examples are published (see the release note in the MOSS section).
 ### Manual installation
 ```bash
 cd ComfyUI/custom_nodes
@@ -72,7 +105,7 @@ Restart ComfyUI after installation, then hard-refresh the browser if the custom 
 ## Requirements
 - ComfyUI with a current frontend recommended.
 - Python 3.10 or later.
-- An SDXL-compatible checkpoint.
+- An SDXL-compatible checkpoint (SDXL workflow) or the MOSS-Image models (MOSS workflow).
 - An NVIDIA GPU; 8–12 GB VRAM is a practical starting point, but actual use depends on source resolution, checkpoint, LoRAs, ControlNets, selected upscaler, and batch size.
 - `opencv-python` and `numpy` for the native perspective-straightening helper.
 Arch Forge’s native straightener uses OpenCV LSD line detection and standard NumPy/OpenCV geometry. It does not require a separate perspective-correction custom node.
@@ -80,7 +113,7 @@ Arch Forge’s native straightener uses OpenCV LSD line detection and standard N
 Arch Forge calls several registered ComfyUI nodes. Install the corresponding packs for the features you intend to use.
 | Dependency | Used for | Required? |
 |---|---|---|
-| [ComfyUI ControlNet Auxiliary Preprocessors](https://github.com/comfyorg/comfyui-controlnet-aux) | `MiDaS-DepthMapPreprocessor` for Depth ControlNet and SSAO depth maps | Required for depth pipeline / SSAO |
+| [ComfyUI ControlNet Auxiliary Preprocessors](https://github.com/comfyorg/comfyui-controlnet-aux) | `MiDaS-DepthMapPreprocessor` for Depth ControlNet and SSAO depth maps; `CannyEdgePreprocessor` for MOSS | Required for depth pipeline / SSAO / MOSS canny |
 | [WAS Node Suite](https://github.com/WASasquatch/was-node-suite-comfyui) | `Image SSAO (Ambient Occlusion)` and `Image Lucy Sharpen` | Required only when SSAO or Lucy Sharpen is enabled |
 | [nuke-nodes-comfyui](https://github.com/sumitchatterjee13/nuke-nodes-comfyui) | `NukeCornerPin` manual perspective warp | Required only when Perspective warp is enabled |
 Core ComfyUI supplies the checkpoint, LoRA, ControlNet, sampler, VAE, ImageBlend, ImageSharpen, and model-upscale nodes used by the workflow.
@@ -88,15 +121,16 @@ Core ComfyUI supplies the checkpoint, LoRA, ControlNet, sampler, VAE, ImageBlend
 Arch Forge has two intentionally separate tools:
 - **Perspective straighten** is the preferred architecture correction. It detects reliable vertical structure, estimates camera roll and pitch, and uses a rotation-only homography to reduce converging verticals. It is conservative: uncertain images remain unchanged rather than being aggressively warped.
 - **Perspective warp** is the optional NukeCornerPin stage. It is a manual four-point mapping tool for compositing or deliberate geometric changes. It does not infer which lines are architectural verticals.
-For normal architectural vertical correction, use **Persp Straighen**. Keep **Persp wrap** disabled unless you specifically need manual corner control.
+For normal architectural vertical correction, use **Persp Straighen**. The separate **Persp wrap** button has been removed from the node UI.
 ## Quick start
 1. Add **Arch Forge** from the `arch_forge` category.
 2. Connect a sketch, clay render, concept render, or base architectural image to `input_image`.
-3. Open **Models** and choose an SDXL checkpoint, optional LoRAs, both ControlNets, and an upscale model.
-4. Open **Prompts** and adapt the positive and negative prompts to the intended material, lighting, place, and camera treatment.
-5. Start with the default Canny and Depth values, then queue the workflow.
-6. Enable post-processing one stage at a time while testing a fixed seed.
-7. For visible keystone, open **Persp Straighen**, enable it, use Auto-crop, and start at Strength `0.70` to `1.00`.
+3. Pick the engine with the workflow switch at the top of the panel (SDXL or MOSS).
+4. Open **Models** and choose an SDXL checkpoint (or the MOSS model, text encoder and VAE), optional LoRAs, the ControlNets or control LoRAs, and an upscale model.
+5. Open **Prompts** and adapt the positive and negative prompts to the intended material, lighting, place, and camera treatment.
+6. Start with the default Canny and Depth values, then queue the workflow.
+7. Enable post-processing one stage at a time while testing a fixed seed.
+8. For visible keystone, open **Persp Straighen**, enable it, use Auto-crop, and start at Strength `0.70` to `1.00`.
 ## Included workflow
 The repository currently includes one sample workflow:
 ```text
@@ -114,28 +148,27 @@ Suggested starting values:
 - Lucy iterations / kernel: `3` / `5`
 - Final sharpen: radius `1`, sigma `1.0`, alpha `0.5`
 - Perspective straighten: enable only after comparing against the uncorrected fixed-seed image
-An **outdoor building workflow** is planned and will be added in a future update.
+An **outdoor building workflow** is planned and will be added in a future update, together with the MOSS example workflows.
 ## Control groups
-The custom UI starts compact and keeps all groups collapsed. Clicking a group shows its ComfyUI widgets and resizes the node to fit the visible inputs.
+The custom UI starts compact and keeps all groups collapsed. Clicking a group shows its ComfyUI widgets and resizes the node to fit the visible inputs. The fields shown depend on the workflow switch.
 | UI group | Main controls |
 |---|---|
-| **Models** | Checkpoint plus three LoRA slots and strengths |
+| **Models** | Checkpoint (SDXL) or MOSS model/text encoder/VAE, plus four LoRA slots and strengths |
 | **Prompts** | Positive and negative prompts |
-| **Canny** | Canny ControlNet, strength/timing, and preprocessor thresholds |
-| **Depth** | Depth ControlNet, strength/timing, MiDaS resolution and parameters |
-| **Persp wrap** | Optional NukeCornerPin manual four-point transform |
+| **Canny** | Canny ControlNet (SDXL) or canny LoRA and `keep_artifacts` (MOSS), strength, thresholds |
+| **Depth** | Depth ControlNet (SDXL) or depth LoRA (MOSS), strength/timing, MiDaS resolution and parameters |
 | **Sampling** | Seed, steps, CFG, sampler, scheduler, and img2img step range |
 | **Ambient Occlusion** | MiDaS depth resolution, SSAO controls, and blend settings |
 | **Sharpen** | Lucy sharpening and final sharpening controls |
 | **Persp Straighen** | Native auto-straighten enable, strength, and crop control |
 | **Upscale** | Selected ComfyUI upscale model |
-The labels **Persp wrap** and **Persp Straighen** are the current UI labels. The latter keeps the spelling used by the shipped interface.
+The label **Persp Straighen** keeps the spelling used by the shipped interface.
 ## Controls
 ### Models
 | Parameter | Description |
 |---|---|
 | `checkpoint_name` | SDXL checkpoint used for generation |
-| `lora_name_1` through `lora_name_3` | Up to three optional LoRA files |
+| `lora_name_1` through `lora_name_4` | Up to four optional LoRA files (in MOSS, slot 4 applies to pass 2 only) |
 | `lora_strength_*_model` | Model-side strength for each LoRA |
 | `lora_strength_*_clip` | CLIP-side strength for each LoRA |
 ### Prompts
@@ -177,7 +210,7 @@ With `canny_only`, the manual warp affects Canny structure guidance while the so
 | `sampler_name` | ComfyUI sampler |
 | `scheduler` | ComfyUI scheduler |
 | `start_at_step` | Img2img denoising start step |
-| `end_at_step` | Img2img denoising end step |
+| `end_at_step` | Img2img denoising end step (MOSS: handoff between pass 1 and pass 2) |
 Require `0 ≤ start_at_step < end_at_step ≤ steps`.
 ### Ambient Occlusion
 | Parameter | Description |
@@ -242,9 +275,12 @@ For best results:
 - Confirm the JavaScript file is in the package `web/` directory and is served through `WEB_DIRECTORY`.
 - Restart ComfyUI, then hard-refresh the browser with `Ctrl+Shift+R` or `Ctrl+F5`.
 - Add a new Arch Forge node after changing Python input definitions; older saved nodes can retain incompatible positional widget values.
+### MOSS workflow errors
+- Select the MOSS model, text encoder, VAE and depth LoRA in **Models** and **Depth**; with `keep_artifacts` on, also select the canny LoRA in **Canny**.
+- If `TextEncodeMOSSImageEdit` is reported as missing, update ComfyUI to a build that includes it.
 ### Required node pack is missing
 The backend reports the exact registered node name it cannot find. Install or enable the relevant pack, then restart ComfyUI.
-- MiDaS depth preprocessing: install ComfyUI ControlNet Auxiliary Preprocessors.
+- MiDaS depth preprocessing and MOSS canny: install ComfyUI ControlNet Auxiliary Preprocessors.
 - SSAO or Lucy Sharpen: install WAS Node Suite.
 - Manual corner pin: install nuke-nodes-comfyui.
 ### Perspective straighten changes little or nothing
@@ -252,10 +288,6 @@ The backend reports the exact registered node name it cannot find. Install or en
 - Use clear architectural images with visible, reliable vertical structure.
 - Test Strength `1.00` against the same fixed-seed result.
 - A no-change result can be intentional: the safety gate refuses uncertain or overly destructive corrections.
-### Perspective warp creates an unwanted result
-- Disable **Persp wrap** first; it is a manual transform, not automatic architecture detection.
-- Use **Persp Straighen** for vertical correction instead.
-- If using Corner Pin, verify the four `nuke_to*` coordinates and test `canny_only` before `all_inputs`.
 ### OpenCV verification
 Run this with ComfyUI’s embedded Python if the straightener cannot import:
 ```bat
@@ -270,17 +302,20 @@ arch_forge/
 │   ├── __init__.py
 │   └── core.py
 ├── web/
-│   └── arch_forge_ui.js
+│   └── arch_forge.js
 ├── examples/
+│   ├── moss/
+│   │   ├── urban-purple-jungle_00009.jpg
+│   │   └── stray-moss_00048.jpg
 │   └── scifi-tunnel-archforge.json
 ├── requirements.txt
 ├── pyproject.toml
 ├── LICENSE
 └── README.md
 ```
-An outdoor-building example workflow is planned but is not yet included.
+An outdoor-building example workflow and the MOSS example workflows are planned but are not yet included.
 ## ComfyUI Registry
-Arch Forge is intended for ComfyUI Registry publication through `pyproject.toml`. Before publishing:
+Arch Forge is intended for ComfyUI Registry publication through `pyproject.toml`. A new version of the custom node, including the MOSS workflow, will be uploaded to the registry when the new examples are up. Before publishing:
 1. Replace GitHub and ComfyUI publisher placeholders.
 2. Keep `LICENSE`, `README.md`, `requirements.txt`, and `pyproject.toml` in the repository root.
 3. Validate installation in a clean ComfyUI environment with all documented optional packs installed.
@@ -290,6 +325,12 @@ Suggested description:
 description = "One-node SDXL architectural environment enhancer for ComfyUI with dual ControlNet, optional SSAO, upscale/sharpening, manual corner pin, and conservative vertical-perspective straightening."
 ```
 ## Changelog
+### Unreleased (next Registry version)
+- Added the **workflow** switch (SDXL / MOSS) at the top of the node panel; the panel shows only the fields of the selected workflow.
+- Added the two-pass MOSS flow with depth and canny control LoRAs, the `keep_artifacts` option, and the optional leftover-noise handoff.
+- Added a fourth LoRA slot (pass 2 only in MOSS).
+- Removed the **Persp wrap** button from the UI.
+- Added MOSS reference images under `examples/moss/`; example workflows will follow.
 ### v1.2.0
 - Reworked the compact UI into Models, Prompts, Canny, Depth, Persp wrap, Sampling, Ambient Occlusion, Sharpen, Persp Straighen, and Upscale groups.
 - Added MiDaS-driven optional SSAO with compositing controls.
