@@ -59,6 +59,17 @@ def _file_list(*folders):
     return []
 
 
+def _file_union(*folders):
+    names = []
+    for folder in folders:
+        try:
+            found = folder_paths.get_filename_list(folder)
+        except Exception:
+            continue
+        names.extend(n for n in found if n not in names)
+    return names
+
+
 def moss_encode(clip, image, prompt, vae=None):
     base = dict(clip=clip, prompt=prompt, edit_format=MOSS_EDIT_FORMAT, image_strength=MOSS_IMAGE_STRENGTH)
     if vae is not None:
@@ -138,6 +149,38 @@ class ArchForgeNode:
                 'moss_leftover_noise_handoff': ('BOOLEAN', {'default': False, 'tooltip': 'MOSS: pass 1 returns leftover noise and pass 2 adds no noise.'}),
             },
         }
+
+    @classmethod
+    def VALIDATE_INPUTS(cls, workflow='SDXL', checkpoint_name=None, canny_controlnet=None,
+                        depth_controlnet=None, vae_name=None, moss_unet_name=None,
+                        moss_clip_name=None, moss_vae_name=None, moss_depth_lora=None,
+                        moss_canny_lora=None, keep_artifacts=False):
+        # Engine-specific selectors are validated only for the active workflow, so a stale or
+        # hidden value that belongs to the other engine can never block the run. Listing an
+        # input here makes ComfyUI skip its own dropdown check for it; the checks below replace it.
+        if workflow not in WORKFLOWS:
+            return f"workflow: value {workflow!r} is not one of {WORKFLOWS}."
+        if workflow == 'MOSS':
+            lora_choices = ['None'] + _file_union('loras')
+            checks = [
+                ('moss_unet_name', moss_unet_name, _file_union('diffusion_models', 'unet')),
+                ('moss_clip_name', moss_clip_name, _file_union('text_encoders', 'clip')),
+                ('moss_vae_name', moss_vae_name, _file_union('vae')),
+                ('moss_depth_lora', moss_depth_lora, lora_choices),
+            ]
+            if keep_artifacts:
+                checks.append(('moss_canny_lora', moss_canny_lora, lora_choices))
+        else:
+            checks = [
+                ('checkpoint_name', checkpoint_name, _file_union('checkpoints')),
+                ('canny_controlnet', canny_controlnet, _file_union('controlnet')),
+                ('depth_controlnet', depth_controlnet, _file_union('controlnet')),
+                ('vae_name', vae_name, ['Checkpoint VAE'] + _file_union('vae')),
+            ]
+        for name, value, choices in checks:
+            if value is not None and value not in choices:
+                return f"{name}: value {value!r} is not available for the {workflow} workflow."
+        return True
 
     def _run_sdxl(self, p, image):
         canny = call_node('Image Canny Filter', images=image,
