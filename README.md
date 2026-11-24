@@ -1,7 +1,7 @@
 # Arch Forge
 
-**A local, credit-free render enhancer for architectural and sci-fi imagery in ComfyUI.**
-Feed it a sketch, clay render, viewport capture or concept image. Get back a finished, upscaled architectural image, generated on your own GPU, in one node.
+**A local, creative upscaler for architectural and sci-fi imagery in ComfyUI.**
+Feed it a drawing, clay render, viewport capture or concept image, depth map based creative upscaler. Get back a finished, upscaled architectural or 3D conversion ready image, generated on your own low VRAM GPU, in one node.
 
 ![Perspective](https://raw.githubusercontent.com/jilt/ArchForge/refs/heads/main/examples/9d0c08a1-b22c-49e1-8e3d-6aafee4f549b.jpeg) ![scifi](https://raw.githubusercontent.com/jilt/ArchForge/refs/heads/main/examples/bb895aa8-f579-4e1f-9810-a018cc76c278.jpeg)
 
