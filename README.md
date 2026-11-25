@@ -83,7 +83,27 @@ LoRAs 1-3 are applied to both passes. LoRA 4 is applied to pass 2 only, and its 
 
 Settings used for the MOSS reference images: steps `25`, cfg `2.5`, sampler `er_sde`, scheduler `simple`, start `6`, end `14`, depth strength `1.0`, canny strength `0.6`, Canny `120` / `220` at resolution `1024`, MiDaS `bg_threshold` `0.5`.
 
-> **Release note:** the SDXL version is published on the ComfyUI Registry. A new version including the MOSS workflow is being released; until it appears in ComfyUI Manager, install from GitHub to use MOSS.
+### How the two MOSS sampler passes work
+
+The MOSS engine runs one schedule of `steps` and splits it into two sampler calls at `end_at_step`. Both calls use the same seed, sampler, scheduler, cfg and prompts.
+
+**Start.** The input image is encoded to a latent and noise is added at the level of `start_at_step`. Steps before `start_at_step` are skipped, so the first `start_at_step` steps never run.
+
+**Pass 1: `start_at_step` → `end_at_step` (layout).** The model gets the depth control LoRA (strength = `depth_strength`), and the prompt is encoded together with the MiDaS depth map of your input image. This pass decides the large-scale layout, perspective and depth. LoRAs 1–3 are active.
+
+**Pass 2: `end_at_step` → `steps` (detail).** The model works on pass 1's result, using LoRAs 1–4 (LoRA 4 is pass 2 only).
+- `keep_artifacts` ON: pass 2 adds the canny control LoRA (strength = `canny_strength`) and a Canny edge map of the input. Edges and lines of the input are held tightly.
+- `keep_artifacts` OFF: pass 2 uses the original image as reference, with no canny LoRA. The model has more freedom.
+
+**Noise between the passes.**
+- `moss_leftover_noise_handoff` OFF (default): pass 1 finishes with a clean latent, and pass 2 adds fresh noise and refines it. Pass 2 acts like a second img2img on the pass 1 result.
+- `moss_leftover_noise_handoff` ON: pass 1 stops with its remaining noise, and pass 2 adds none. The two passes behave like one continuous run, switching conditioning at `end_at_step`.
+
+**Rules.** `0 <= start_at_step < end_at_step <= steps`. If `end_at_step` equals `steps`, pass 2 has nothing left to run, so `keep_artifacts` and LoRA 4 do nothing.
+
+**Ignored in MOSS.** `canny_start`, `canny_end`, `depth_start`, `depth_end`, `canny_threshold_*` and the SDXL ControlNet and checkpoint fields. They are used by the SDXL workflow only.
+
+> **Release note:** version 1.1.0 adds the MOSS workflow. It is being published to the ComfyUI Registry; until it appears in ComfyUI Manager, install from GitHub to use MOSS.
 
 ## Quick start
 
@@ -99,7 +119,7 @@ Settings used for the MOSS reference images: steps `25`, cfg `2.5`, sampler `er_
 ## Installation
 
 ### ComfyUI Manager / Registry
-Search for **Arch Forge** in ComfyUI Manager and choose **Install**. The Registry currently carries the SDXL version; the MOSS-enabled version follows.
+Search for **Arch Forge** in ComfyUI Manager and choose **Install**. Version 1.1.0 includes both the SDXL and MOSS workflows; until it appears in ComfyUI Manager, install from GitHub.
 
 ### Manual installation
 ```bash
@@ -306,27 +326,27 @@ arch_forge/
 ```
 
 ## Roadmap
-- Publish the MOSS-enabled version to the ComfyUI Registry with example workflows.
 - Outdoor-building example workflow.
 - Broader benchmark including repeated runs and the MOSS engine.
 
 Registry releases come from `pyproject.toml`; increment the semantic version for every release.
 
 ## Changelog
-### Unreleased (next Registry version)
+### v1.1.0
 - Added the **workflow** switch (SDXL / MOSS) at the top of the node panel; the panel shows only the fields of the selected workflow.
 - Added the two-pass MOSS flow with depth and canny control LoRAs, the `keep_artifacts` option, and the optional leftover-noise handoff.
 - Added a fourth LoRA slot (pass 2 only in MOSS).
 - Removed the **Persp wrap** button from the UI.
-- Added MOSS reference images under `examples/`; example workflows will follow.
-### v1.2.0
+- Validation now checks only the selected workflow's models.
+- Added MOSS reference images under `examples/`.
+### v1.0.2
 - Reworked the compact UI into Models, Prompts, Canny, Depth, Sampling, Ambient Occlusion, Sharpen, Persp Straighen, and Upscale groups.
 - Added MiDaS-driven optional SSAO with compositing controls.
 - Added optional WAS Suite Lucy-Richardson sharpening before final sharpen.
 - Replaced the earlier native perspective heuristic with conservative camera-rotation vertical correction.
 - Perspective correction now uses robust line evidence, a confidence gate, valid crop planning, and does not apply automatic yaw correction.
 - Added `scifi-tunnel-archforge.json` as the current sample workflow.
-### v1.1.0
+### v1.0.1
 - Added integrated auto-straighten perspective controls.
 ### v1.0.0
 - Initial Arch Forge release.
