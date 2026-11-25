@@ -105,7 +105,8 @@ def _prepare(bgr, settings):
     d = _directions(seg)
     mid = np.column_stack([(seg[:, 0] + seg[:, 2]) * .5, (seg[:, 1] + seg[:, 3]) * .5])
     length = _lengths(seg)
-    a = np.abs(np.arctan2(d[:, 0], d[:, 1])); a = np.minimum(a, math.pi - a)
+    a = np.abs(np.arctan2(d[:, 0], d[:, 1]))
+    a = np.minimum(a, math.pi - a)
     x = np.clip(a / max(vwin, 1e-6), 0.0, 1.0)
     weight = length * np.exp(-(x * x) / (2 * settings.angular_softness * settings.angular_softness))
     return (seg, _lines(seg), mid, d, weight, w, h), scale
@@ -177,7 +178,8 @@ def _find_vertical_vp(lines, mid, direction, weight, w, h, settings):
     best = []
     for _ in range(settings.ransac_iters):
         i, j = rng.choice(n, 2, replace=False, p=probs)
-        ai = abs(math.atan2(direction[i,0], direction[i,1])); aj = abs(math.atan2(direction[j,0], direction[j,1]))
+        ai = abs(math.atan2(direction[i,0], direction[i,1]))
+        aj = abs(math.atan2(direction[j,0], direction[j,1]))
         if abs(ai - aj) < math.radians(.6):
             continue
         vp = _norm_vp(np.cross(lines[i], lines[j]))
@@ -276,7 +278,8 @@ def _inside(quad, pts):
         a,b = quad[i], quad[(i+1)%len(quad)]
         edge = b-a
         cross = edge[0]*(pts[:,1]-a[1]) - edge[1]*(pts[:,0]-a[0])
-        values = np.sign(cross); values = values[values != 0]
+        values = np.sign(cross)
+        values = values[values != 0]
         if len(values) == 0:
             continue
         if sign is None: sign = values[0]
@@ -287,7 +290,8 @@ def _inside(quad, pts):
 def _inscribed_rect(quad, aspect, centre, iterations=40):
     lo, hi = 0.0, float(np.max(np.abs(quad-centre))*2.0+1.0)
     for _ in range(iterations):
-        hw = (lo+hi)*.5; hh = hw/aspect
+        hw = (lo+hi)*.5
+        hh = hw/aspect
         pts = centre + np.array([[-hw,-hh],[hw,-hh],[hw,hh],[-hw,hh]])
         if _inside(quad, pts): lo = hw
         else: hi = hw
@@ -345,7 +349,8 @@ def compute_perspective_correction(image: np.ndarray, strength: float = 1.0, aut
     if roll_pitch is None:
         return image
     roll, pitch = roll_pitch
-    roll *= strength; pitch *= strength
+    roll *= strength
+    pitch *= strength
     if abs(math.degrees(roll)) > settings.max_roll_deg or abs(math.degrees(pitch)) > settings.max_pitch_deg:
         return image
     if math.degrees(math.hypot(roll, pitch)) < settings.min_correction_deg:
